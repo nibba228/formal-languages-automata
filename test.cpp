@@ -2,7 +2,7 @@
 #include <gtest/gtest.h>
 #include <queue>
 
-#include "re_nfa.cpp"
+#include "nfa.cpp"
 
 class NFATest : public ::testing::Test {
  protected:
@@ -46,14 +46,14 @@ auto NFATest::bfs(const NFA& nfa, size_t limit) {
 }
 
 TEST_F(NFATest, SimpleOnlyConcat) {
-  nfa1 = Solve("ab.c.");
+  nfa1 = NFA("ab.c.");
   bool flag = false;
   std::unordered_set<std::string> s = bfs(nfa1);
   decltype(s) st = {"abc"};
 
   EXPECT_EQ(st, s);
 
-  nfa1 = Solve("ab.a.c.a.b.a.");
+  nfa1 = NFA("ab.a.c.a.b.a.");
   flag = false;
   s = bfs(nfa1);
   st = {"abacaba"};
@@ -62,34 +62,34 @@ TEST_F(NFATest, SimpleOnlyConcat) {
 }
 
 TEST_F(NFATest, ConcatPlus) {
-  nfa1 = Solve("ab+cb.a.+");
+  nfa1 = NFA("ab+cb.a.+");
   std::unordered_set<std::string> s = {"a", "b", "cba"};
   auto st = bfs(nfa1);
   ASSERT_EQ(st, s);
 
-  nfa1 = Solve("aaab.+b+.");
+  nfa1 = NFA("aaab.+b+.");
   s = {"aa", "aab", "ab"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
 
-  nfa1 = Solve("aaab.+b+.c.");
+  nfa1 = NFA("aaab.+b+.c.");
   s = {"aac", "aabc", "abc"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
 
-  nfa1 = Solve("ab.a.c.aba.+b+.c.a.");
+  nfa1 = NFA("ab.a.c.aba.+b+.c.a.");
   s = {"abacaca", "abacbaca", "abacbca"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
 }
 
 TEST_F(NFATest, Kleene) {
-  nfa1 = Solve("a*");
+  nfa1 = NFA("a*");
   decltype(bfs(std::declval<NFA>())) s = {"", "a", "aa", "aaa"};
   auto st = bfs(nfa1, 3);
   EXPECT_EQ(st, s);
 
-  nfa1 = Solve("bac+*.*");
+  nfa1 = NFA("bac+*.*");
   s = {"", "b", "ba", "baa", "bac", "bca", "bcc", "bc", "bb", "bba", "bbc", "bbb", "bab", "bcb"};
   st = bfs(nfa1, 3);
   EXPECT_EQ(st, s);
