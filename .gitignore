@@ -30,3 +30,9 @@
 *.exe
 *.out
 *.app
+ex
+
+# Bash scripts
+comp.sh
+look_log.sh
+test.sh
