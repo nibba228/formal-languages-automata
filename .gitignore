@@ -36,3 +36,9 @@ ex
 comp.sh
 look_log.sh
 test.sh
+
+# CMake
+build/
+
+# Config files
+.clangd

@@ -1,17 +1,18 @@
 #include <cstdint>
 #include <gtest/gtest.h>
 #include <queue>
+#include <variant>
 
-#include "nfa.cpp"
+#include "dfa.cpp"
 
-class NFATest : public ::testing::Test {
+class DFATest : public ::testing::Test {
  protected:
-   auto bfs(const NFA& nfa, size_t limit = SIZE_MAX);
+   auto bfs(const DFA& nfa, size_t limit = SIZE_MAX);
 
-  NFA nfa1;
+  DFA nfa1;
 };
 
-auto NFATest::bfs(const NFA& nfa, size_t limit) {
+auto DFATest::bfs(const DFA& nfa, size_t limit) {
   std::queue<std::pair<std::variant<std::shared_ptr<Node>, std::weak_ptr<Node>>, std::string>> q;
   q.push({nfa.start, ""});
 
@@ -21,8 +22,10 @@ auto NFATest::bfs(const NFA& nfa, size_t limit) {
     auto [node, str] = q.front();
     q.pop();
 
-    if (std::holds_alternative<std::shared_ptr<Node>>(node) &&
-        std::get<std::shared_ptr<Node>>(node)->term) {
+    if ((std::holds_alternative<std::shared_ptr<Node>>(node) &&
+        std::get<std::shared_ptr<Node>>(node)->term) ||
+        (std::holds_alternative<std::weak_ptr<Node>>(node) &&
+        std::get<1>(node).lock()->term)) {
       s.insert(str);
     }
     
@@ -45,15 +48,15 @@ auto NFATest::bfs(const NFA& nfa, size_t limit) {
   return s;
 }
 
-TEST_F(NFATest, SimpleOnlyConcat) {
-  nfa1 = NFA("ab.c.");
+TEST_F(DFATest, SimpleOnlyConcat) {
+  nfa1 = DFA("ab.c.");
   bool flag = false;
   std::unordered_set<std::string> s = bfs(nfa1);
   decltype(s) st = {"abc"};
 
   EXPECT_EQ(st, s);
 
-  nfa1 = NFA("ab.a.c.a.b.a.");
+  nfa1 = DFA("ab.a.c.a.b.a.");
   flag = false;
   s = bfs(nfa1);
   st = {"abacaba"};
@@ -61,35 +64,35 @@ TEST_F(NFATest, SimpleOnlyConcat) {
   EXPECT_EQ(st, s);
 }
 
-TEST_F(NFATest, ConcatPlus) {
-  nfa1 = NFA("ab+cb.a.+");
+TEST_F(DFATest, ConcatPlus) {
+  nfa1 = DFA("ab+cb.a.+");
   std::unordered_set<std::string> s = {"a", "b", "cba"};
   auto st = bfs(nfa1);
   ASSERT_EQ(st, s);
 
-  nfa1 = NFA("aaab.+b+.");
+  nfa1 = DFA("aaab.+b+.");
   s = {"aa", "aab", "ab"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
 
-  nfa1 = NFA("aaab.+b+.c.");
+  nfa1 = DFA("aaab.+b+.c.");
   s = {"aac", "aabc", "abc"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
 
-  nfa1 = NFA("ab.a.c.aba.+b+.c.a.");
+  nfa1 = DFA("ab.a.c.aba.+b+.c.a.");
   s = {"abacaca", "abacbaca", "abacbca"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
 }
 
-TEST_F(NFATest, Kleene) {
-  nfa1 = NFA("a*");
-  decltype(bfs(std::declval<NFA>())) s = {"", "a", "aa", "aaa"};
+TEST_F(DFATest, Kleene) {
+  nfa1 = DFA("a*");
+  decltype(bfs(std::declval<DFA>())) s = {"", "a", "aa", "aaa"};
   auto st = bfs(nfa1, 3);
   EXPECT_EQ(st, s);
 
-  nfa1 = NFA("bac+*.*");
+  nfa1 = DFA("bac+*.*");
   s = {"", "b", "ba", "baa", "bac", "bca", "bcc", "bc", "bb", "bba", "bbc", "bbb", "bab", "bcb"};
   st = bfs(nfa1, 3);
   EXPECT_EQ(st, s);

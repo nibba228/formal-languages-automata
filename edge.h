@@ -15,6 +15,12 @@ struct Edge {
   template <NodeSmartPointer T>
   Edge(const T& to, char letter): to(to), letter(letter) {}
 
+  Edge(Edge&&) = default;
+
+  Edge(const Edge&) = default;
+
+  Edge& operator=(const Edge&) = default;
+
   std::variant<std::shared_ptr<Node>, std::weak_ptr<Node>> to;
   char letter;
 };
