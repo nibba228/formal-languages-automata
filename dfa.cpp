@@ -28,20 +28,26 @@ void DFA::sum(DFA& nfa) {
   q0.start->out.emplace_back(nfa.start, '1');
   
   DFA qf;
-  for (auto& q : finite) {
+  auto process_term = [&qf](auto& q) {
     q->term = false;
     q->out.emplace_back(qf.start, '1');
     q = nullptr;
+  };
+
+  for (auto& q : finite) {
+    process_term(q);
   }
 
   for (auto& q : nfa.finite) {
-    q->term = false;
-    q->out.emplace_back(qf.start, '1');
-    q = nullptr;
+    process_term(q);
   }
 
-  std::get<0>(q0.start->out[0].to)->start = false;
-  std::get<0>(q0.start->out[1].to)->start = false;
+  auto update_start = [&q0](size_t i) {
+    std::get<0>(q0.start->out[i].to)->start = false;
+  };
+
+  update_start(0);
+  update_start(1);
 
   start->start = false;
   start = q0.start;
@@ -79,7 +85,7 @@ void DFA::add_node(const std::shared_ptr<Node>& from, bool fin, char letter) {
   }
 }
 
-void DFA::make_finite(std::shared_ptr<Node> node) {
+void DFA::make_finite(std::shared_ptr<Node>& node) {
   node->term = true;
   finite.push_back(node);
 }
@@ -149,32 +155,28 @@ DFA::DFA(const std::string& s) {
       }
     }
   }
+  
+  if (automatas.size() != 1) {
+    throw std::logic_error("incorrect RE! It must be written in reversed Polish notation!");
+  }
+
   start = std::move(automatas[0].start);
   finite = std::move(automatas[0].finite);
 
-  // Making DFA
   condense_eps_();
   std::unordered_map<std::shared_ptr<Node>, bool> used;
-  delete_eps_(start, used);
 }
 
 template <NodeSmartPointer S>
-bool DFA::dfs_(S& v, std::vector<std::pair<std::shared_ptr<Node>, Edge>>& new_edges,
+bool DFA::dfs_(const S& v, std::vector<std::pair<std::shared_ptr<Node>, Edge>>& new_edges,
                std::unordered_map<std::shared_ptr<Node>, bool>& used,
                const std::shared_ptr<Node>& eps) {
-  std::shared_ptr<Node> node(nullptr);
-  if constexpr (std::is_same_v<S, std::shared_ptr<Node>>) {
-    node = v;
-  } else {
-    node = v.lock();
-  }
-
+  auto node = utils::get_shared_ptr(v);
   used[node] = true;
   bool term = node->term;
 
   for (auto& e : node->out) {
-    auto us = std::get_if<0>(&e.to);
-    auto uw = std::get_if<1>(&e.to);
+    auto [us, uw] = utils::get_shared_ptr_from_variant(e.to);
 
     if (e.letter == '1') {
       std::shared_ptr<Node>& temp = const_cast<std::shared_ptr<Node>&>(eps);
@@ -226,40 +228,5 @@ void DFA::condense_eps_() {
       continue;
     }
     node->out.push_back(std::move(edge));
-  }
-}
-
-template <NodeSmartPointer S>
-void DFA::delete_eps_(S& v, std::unordered_map<std::shared_ptr<Node>, bool>& used) {
-  std::shared_ptr<Node> node(nullptr);
-  if constexpr (std::is_same_v<S, std::shared_ptr<Node>>) {
-    node = v;
-  } else {
-    node = v.lock();
-  }
-
-  used[node] = true;
-  for (size_t i = 0; i < node->out.size(); ++i) {
-    if (node->out[i].letter == '1') {
-      node->out.erase(node->out.begin() + i);
-      continue;
-    }
-
-    auto& e = node->out[i];
-
-    auto us = std::get_if<0>(&e.to);
-    auto uw = std::get_if<1>(&e.to);
-
-    bool is_used = false;
-    if (us) {
-      is_used = used[*us];
-    } else {
-      is_used = used[uw->lock()];
-    }
-
-    if (!is_used) {
-      auto sh = (us ? *us : uw->lock());
-      delete_eps_(sh, used);
-    }
   }
 }

@@ -42,3 +42,6 @@ build/
 
 # Config files
 .clangd
+
+# templates
+del_eps.cpp

@@ -1,48 +1,84 @@
 #include "dfa.cpp"
+#include "edge.h"
 
-auto bfs(const DFA& dfa, size_t limit = SIZE_MAX) {
-  std::queue<std::pair<std::variant<std::shared_ptr<Node>, std::weak_ptr<Node>>, std::string>> q;
-  q.push({dfa.start, ""});
+template <NodeSmartPointer S>
+void emphasis_x(const S& v, std::unordered_map<std::shared_ptr<Node>, bool>& used, char x,
+         std::vector<std::shared_ptr<Node>>& x_nodes, int x_count = 0) {
+  auto node = utils::get_shared_ptr(v);
 
-  std::unordered_set<std::string> s;
+  used[node] = true;
+  for (auto& e : node->out) {
+    auto [us, uw] = utils::get_shared_ptr_from_variant(e.to);
+    std::shared_ptr<Node> ptr = (us ? *us : uw->lock());
 
-  while (!q.empty()) {
-    auto [node, str] = q.front();
-    q.pop();
-
-    if (std::holds_alternative<std::shared_ptr<Node>>(node) &&
-        std::get<std::shared_ptr<Node>>(node)->term) {
-      s.insert(str);
+    if (e.letter == x) {
+      if (x_count == 0) {
+        x_nodes.push_back(node);
+      }
+      if (!used[ptr]) {
+        emphasis_x(ptr, used, x, x_nodes, x_count + 1);
+      }
+    } else if (e.letter != '1') {
+      if (!used[ptr]) {
+        emphasis_x(ptr, used, x, x_nodes, 0);  
+      }
     }
-    
-    std::shared_ptr<Node> ptr =
-      (std::holds_alternative<std::shared_ptr<Node>>(node) ? std::get<0>(node) :
-       (std::get<1>(node).expired() ? nullptr : std::get<1>(node).lock()));
-    if (ptr) {
-      for (auto& e : ptr->out) {
-        if (e.letter == '1') {
-          continue;
-        } else {
-          if (str.size() + 1 <= limit) {
-            q.push({e.to, str + e.letter});
-          }
-        }
+  }
+}
+
+template <NodeSmartPointer S>
+bool dfs(const S& v, std::unordered_map<std::shared_ptr<Node>, bool>& used, char x, int count, int k) {
+  auto node = utils::get_shared_ptr(v);
+  if (count >= k) {
+    return true;
+  }
+
+  used[node] = true;
+  for (auto& e : node->out) {
+    auto [us, uw] = utils::get_shared_ptr_from_variant(e.to);
+    std::shared_ptr<Node> ptr = (us ? *us : uw->lock());
+
+    bool flag = false;
+    if (e.letter == x) {
+      if (used[ptr]) {
+        return true;
+      }
+      flag = dfs(ptr, used, x, count + 1, k);
+      if (flag) {
+        return true;
       }
     }
   }
 
-  return s;
+  return false;
 }
 
-int main() {
-  std::string s;
-  std::cin >> s;
+std::string Solve(const std::string& s, char x, int k) {
+  if (k == 0) {
+    return "YES";
+  }
+
   DFA dfa(s);
 
+  std::vector<std::shared_ptr<Node>> x_nodes;
   std::unordered_map<std::shared_ptr<Node>, bool> used;
-  auto st = bfs(dfa, 3);
+  emphasis_x(dfa.start, used, x, x_nodes);
+  used.clear();
 
-  for (auto s : st) {
-    std::cout << s << ' ';
+  bool flag = false;
+  for (size_t i = 0; i < x_nodes.size(); ++i) {
+    const auto& node = x_nodes[i];
+    if (!used[node]) {
+      flag = dfs(node, used, x, 0, k);
+      if (flag) {
+        break;
+      }
+    }
+  }
+
+  if (flag) {
+    return "YES";
+  } else {
+    return "NO";
   }
 }
