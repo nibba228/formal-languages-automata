@@ -5,14 +5,9 @@
 
 #include "solve.cpp"
 
-class DFATest : public ::testing::Test {
- protected:
-   auto bfs(const DFA& nfa, size_t limit = SIZE_MAX);
+auto bfs(const DFA& nfa, size_t limit = SIZE_MAX);
 
-  DFA nfa1;
-};
-
-auto DFATest::bfs(const DFA& nfa, size_t limit) {
+auto bfs(const DFA& nfa, size_t limit) {
   std::queue<std::pair<std::variant<std::shared_ptr<Node>, std::weak_ptr<Node>>, std::string>> q;
   q.push({nfa.start, ""});
 
@@ -48,28 +43,26 @@ auto DFATest::bfs(const DFA& nfa, size_t limit) {
   return s;
 }
 
-TEST_F(DFATest, SimpleOnlyConcat) {
-  nfa1 = DFA("aa.a.a.a.");
+TEST(DFATest, SimpleOnlyConcat) {
+  auto nfa1 = DFA("aa.a.a.a.");
   std::unordered_set<std::string> s = bfs(nfa1);
   decltype(s) st = {"aaaaa"};
   EXPECT_EQ(st, s);
   nfa1 = DFA("ab.c.");
-  bool flag = false;
   s = bfs(nfa1);
   st = {"abc"};
 
   EXPECT_EQ(st, s);
 
   nfa1 = DFA("ab.a.c.a.b.a.");
-  flag = false;
   s = bfs(nfa1);
   st = {"abacaba"};
 
   EXPECT_EQ(st, s);
 }
 
-TEST_F(DFATest, ConcatPlus) {
-  nfa1 = DFA("ab+cb.a.+");
+TEST(DFATest, ConcatPlus) {
+  auto nfa1 = DFA("ab+cb.a.+");
   std::unordered_set<std::string> s = {"a", "b", "cba"};
   auto st = bfs(nfa1);
   ASSERT_EQ(st, s);
@@ -121,8 +114,8 @@ TEST_F(DFATest, ConcatPlus) {
   }
 }
 
-TEST_F(DFATest, Kleene) {
-  nfa1 = DFA("a*");
+TEST(DFATest, Kleene) {
+  auto nfa1 = DFA("a*");
   decltype(bfs(std::declval<DFA>())) s = {"", "a", "aa", "aaa"};
   auto st = bfs(nfa1, 3);
   EXPECT_EQ(st, s);
@@ -151,6 +144,16 @@ TEST_F(DFATest, Kleene) {
       EXPECT_EQ("YES", str);
     }
   }
+}
+
+TEST(DFATest, ErrorTest) {
+  using err = std::logic_error;
+  EXPECT_THROW(Solve("aaa", 'a', 1), err);
+  EXPECT_THROW(Solve("ab..", 'a', 1), err);
+  EXPECT_THROW(Solve("ru.", 'a', 1), err);
+  EXPECT_THROW(Solve("a.", 'a', 1), err);
+  EXPECT_THROW(Solve("a+", 'a', 1), err);
+  EXPECT_THROW(Solve("*", 'a', 1), err);
 }
 
 int main(int argc, char** argv) {

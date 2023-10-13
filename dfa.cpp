@@ -138,7 +138,7 @@ DFA::DFA(const std::string& s) {
           {
             size_t sz = automatas.size();
             automatas[sz - 2].sum(automatas[sz - 1]);
-            automatas.erase(automatas.begin() + sz - 1);
+           automatas.erase(automatas.begin() + sz - 1);
           }
           break;
 

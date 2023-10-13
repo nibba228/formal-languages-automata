@@ -18,3 +18,10 @@ target_link_libraries(tests GTest::gtest_main)
 
 include(GoogleTest)
 gtest_discover_tests(tests)
+
+include(CodeCoverage.cmake)
+append_coverage_compiler_flags()
+setup_target_for_coverage_lcov(
+  NAME test_coverage
+  EXECUTABLE tests
+)
