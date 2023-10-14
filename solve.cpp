@@ -1,4 +1,4 @@
-#include "dfa.cpp"
+#include "nfa.cpp"
 #include "edge.h"
 
 template <NodeSmartPointer S>
@@ -58,11 +58,11 @@ std::string Solve(const std::string& s, char x, int k) {
     return "YES";
   }
 
-  DFA dfa(s);
+  NFA nfa(s);
 
   std::vector<std::shared_ptr<Node>> x_nodes;
   std::unordered_map<std::shared_ptr<Node>, bool> used;
-  emphasis_x(dfa.start, used, x, x_nodes);
+  emphasis_x(nfa.start, used, x, x_nodes);
   used.clear();
 
   bool flag = false;

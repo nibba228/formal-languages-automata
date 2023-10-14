@@ -7,20 +7,20 @@
 #include "edge.h"
 #include "node.h"
 
-struct DFA {
-  DFA(): finite{}, start(std::make_shared<Node>(true, false)) {}
+struct NFA {
+  NFA(): finite{}, start(std::make_shared<Node>(true, false)) {}
 
-  explicit DFA(const std::string& str);
+  explicit NFA(const std::string& str);
 
-  DFA(const DFA&) = default;
+  NFA(const NFA&) = default;
 
-  DFA(DFA&&) = default;
+  NFA(NFA&&) = default;
 
-  DFA& operator=(const DFA&) = default;
+  NFA& operator=(const NFA&) = default;
 
-  void concat(DFA&& nfa);
+  void concat(NFA&& nfa);
 
-  void sum(DFA& nfa);
+  void sum(NFA& nfa);
 
   void kleene();
 

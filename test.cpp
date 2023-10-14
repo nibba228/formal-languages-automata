@@ -5,9 +5,9 @@
 
 #include "solve.cpp"
 
-auto bfs(const DFA& nfa, size_t limit = SIZE_MAX);
+auto bfs(const NFA& nfa, size_t limit = SIZE_MAX);
 
-auto bfs(const DFA& nfa, size_t limit) {
+auto bfs(const NFA& nfa, size_t limit) {
   std::queue<std::pair<std::variant<std::shared_ptr<Node>, std::weak_ptr<Node>>, std::string>> q;
   q.push({nfa.start, ""});
 
@@ -43,32 +43,32 @@ auto bfs(const DFA& nfa, size_t limit) {
   return s;
 }
 
-TEST(DFATest, SimpleOnlyConcat) {
-  auto nfa1 = DFA("aa.a.a.a.");
+TEST(NFATest, SimpleOnlyConcat) {
+  auto nfa1 = NFA("aa.a.a.a.");
   std::unordered_set<std::string> s = bfs(nfa1);
   decltype(s) st = {"aaaaa"};
   EXPECT_EQ(st, s);
-  nfa1 = DFA("ab.c.");
+  nfa1 = NFA("ab.c.");
   s = bfs(nfa1);
   st = {"abc"};
 
   EXPECT_EQ(st, s);
 
-  nfa1 = DFA("ab.a.c.a.b.a.");
+  nfa1 = NFA("ab.a.c.a.b.a.");
   s = bfs(nfa1);
   st = {"abacaba"};
 
   EXPECT_EQ(st, s);
 }
 
-TEST(DFATest, ConcatPlus) {
-  auto nfa1 = DFA("ab+cb.a.+");
+TEST(NFATest, ConcatPlus) {
+  auto nfa1 = NFA("ab+cb.a.+");
   std::unordered_set<std::string> s = {"a", "b", "cba"};
   auto st = bfs(nfa1);
   ASSERT_EQ(st, s);
 
   auto test = "aaab.+b+.";
-  nfa1 = DFA(test);
+  nfa1 = NFA(test);
   s = {"aa", "aab", "ab"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
@@ -84,7 +84,7 @@ TEST(DFATest, ConcatPlus) {
 
 
   test = "aaab.+b+.c.";
-  nfa1 = DFA(test);
+  nfa1 = NFA(test);
   s = {"aac", "aabc", "abc"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
@@ -99,7 +99,7 @@ TEST(DFATest, ConcatPlus) {
   }
 
   test = "ab.a.c.aba.+b+.c.a.";
-  nfa1 = DFA(test);
+  nfa1 = NFA(test);
   s = {"abacaca", "abacbaca", "abacbca"};
   st = bfs(nfa1);
   EXPECT_EQ(st, s);
@@ -114,9 +114,9 @@ TEST(DFATest, ConcatPlus) {
   }
 }
 
-TEST(DFATest, Kleene) {
-  auto nfa1 = DFA("a*");
-  decltype(bfs(std::declval<DFA>())) s = {"", "a", "aa", "aaa"};
+TEST(NFATest, Kleene) {
+  auto nfa1 = NFA("a*");
+  decltype(bfs(std::declval<NFA>())) s = {"", "a", "aa", "aaa"};
   auto st = bfs(nfa1, 3);
   EXPECT_EQ(st, s);
 
@@ -131,7 +131,7 @@ TEST(DFATest, Kleene) {
   }
 
   auto test = "bac+*.*";
-  nfa1 = DFA(test);
+  nfa1 = NFA(test);
   s = {"", "b", "ba", "baa", "bac", "bca", "bcc", "bc", "bb", "bba", "bbc", "bbb", "bab", "bcb"};
   st = bfs(nfa1, 3);
   EXPECT_EQ(st, s);
@@ -146,7 +146,7 @@ TEST(DFATest, Kleene) {
   }
 }
 
-TEST(DFATest, ErrorTest) {
+TEST(NFATest, ErrorTest) {
   using err = std::logic_error;
   EXPECT_THROW(Solve("aaa", 'a', 1), err);
   EXPECT_THROW(Solve("ab..", 'a', 1), err);

@@ -1,7 +1,6 @@
 #include <stdexcept>
 #include <variant>
 #include <vector>
-#include <queue>
 #include <iostream>
 #include <string>
 #include <unordered_set>
@@ -9,9 +8,9 @@
 #include <memory>
 
 #include "edge.h"
-#include "dfa.h"
+#include "nfa.h"
 
-void DFA::concat(DFA&& nfa) {
+void NFA::concat(NFA&& nfa) {
   for (auto& q : finite) {
     q->term = false;
     q->out.emplace_back(nfa.start, '1');
@@ -22,12 +21,12 @@ void DFA::concat(DFA&& nfa) {
   finite = std::move(nfa.finite);
 }
 
-void DFA::sum(DFA& nfa) {
-  DFA q0;
+void NFA::sum(NFA& nfa) {
+  NFA q0;
   q0.start->out.emplace_back(start, '1');
   q0.start->out.emplace_back(nfa.start, '1');
   
-  DFA qf;
+  NFA qf;
   auto process_term = [&qf](auto& q) {
     q->term = false;
     q->out.emplace_back(qf.start, '1');
@@ -56,8 +55,8 @@ void DFA::sum(DFA& nfa) {
   finite = std::move(qf.finite);
 }
 
-void DFA::kleene() {
-  DFA q0;
+void NFA::kleene() {
+  NFA q0;
   q0.start->out.emplace_back(start, '1');
 
   for (auto& q : finite) {
@@ -66,7 +65,7 @@ void DFA::kleene() {
     q = nullptr;
   }
 
-  DFA qf;
+  NFA qf;
   qf.make_finite(qf.start);
   q0.start->out.emplace_back(qf.start, '1');
 
@@ -76,7 +75,7 @@ void DFA::kleene() {
   finite = std::move(qf.finite);
 }
 
-void DFA::add_node(const std::shared_ptr<Node>& from, bool fin, char letter) {
+void NFA::add_node(const std::shared_ptr<Node>& from, bool fin, char letter) {
   auto new_node = std::make_shared<Node>(false, fin);
   from->out.emplace_back(new_node, letter);
 
@@ -85,15 +84,15 @@ void DFA::add_node(const std::shared_ptr<Node>& from, bool fin, char letter) {
   }
 }
 
-void DFA::make_finite(std::shared_ptr<Node>& node) {
+void NFA::make_finite(std::shared_ptr<Node>& node) {
   node->term = true;
   finite.push_back(node);
 }
 
-DFA::DFA(const std::string& s) {
+NFA::NFA(const std::string& s) {
   const std::unordered_set<char> operators = {'.', '+', '*'};
   const decltype(operators) alph = {'a', 'b', 'c', '.', '+', '*'};
-  std::vector<DFA> automatas;
+  std::vector<NFA> automatas;
 
   for (size_t i = 0; i < s.size(); ++i) {
     char c = s[i];
@@ -107,7 +106,7 @@ DFA::DFA(const std::string& s) {
     }
 
     if (operators.find(c) == operators.end()) {
-      DFA& ref = automatas.emplace_back();
+      NFA& ref = automatas.emplace_back();
       ref.add_node(ref.start, true, c);
     } else {
       switch (c) {
@@ -121,7 +120,7 @@ DFA::DFA(const std::string& s) {
 
           {
             size_t sz = automatas.size();
-            DFA nfa_r = std::move(automatas[sz - 1]);
+            NFA nfa_r = std::move(automatas[sz - 1]);
             automatas[sz - 2].concat(std::move(nfa_r));
             automatas.erase(automatas.begin() + sz - 1);
           }
@@ -168,7 +167,7 @@ DFA::DFA(const std::string& s) {
 }
 
 template <NodeSmartPointer S>
-bool DFA::dfs_(const S& v, std::vector<std::pair<std::shared_ptr<Node>, Edge>>& new_edges,
+bool NFA::dfs_(const S& v, std::vector<std::pair<std::shared_ptr<Node>, Edge>>& new_edges,
                std::unordered_map<std::shared_ptr<Node>, bool>& used,
                const std::shared_ptr<Node>& eps) {
   auto node = utils::get_shared_ptr(v);
@@ -218,7 +217,7 @@ bool DFA::dfs_(const S& v, std::vector<std::pair<std::shared_ptr<Node>, Edge>>& 
   return ret;
 }
 
-void DFA::condense_eps_() {
+void NFA::condense_eps_() {
   std::vector<std::pair<std::shared_ptr<Node>, Edge>> new_edges;
   std::unordered_map<std::shared_ptr<Node>, bool> used;
   dfs_(start, new_edges, used); 
